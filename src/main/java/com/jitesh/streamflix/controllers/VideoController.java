@@ -2,9 +2,10 @@ package com.jitesh.streamflix.controllers;
 
 import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.services.VideoMetaService;
+import com.jitesh.streamflix.utils.AppConstants;
 import com.jitesh.streamflix.utils.ResponseMessage;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -108,12 +109,9 @@ public class VideoController {
 
         rangeStart = Long.parseLong(ranges[0]);
 
-        if (ranges.length > 1) {
-            rangeEnd = Long.parseLong(ranges[1]);
-        } else {
-            rangeEnd = fileLength - 1; // if end not present then send complete file
-        }
-        if (rangeEnd > fileLength - 1) {
+        rangeEnd = rangeStart + AppConstants.CHUNK_SIZE - 1;
+
+        if (rangeEnd >= fileLength) {
             rangeEnd = fileLength - 1;
         }
 
@@ -121,23 +119,28 @@ public class VideoController {
         try {
             inputStream = Files.newInputStream(path);
             inputStream.skip(rangeStart);
-        } catch (IOException e) {
+            long contentLength = rangeEnd - rangeStart + 1;
+
+            byte[] data = new byte[(int) contentLength];
+            inputStream.read(data, 0, data.length);
+
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Range", "bytes " + rangeStart + "-" + rangeEnd + "/" + fileLength);
+            headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+            headers.add("Pragma", "no-cache");
+            headers.add("Expires", "0");
+            headers.add("X-Content-Type-Options", "nosniff");
+            headers.setContentLength(contentLength);
+
+            return ResponseEntity
+                    .status(HttpStatus.PARTIAL_CONTENT)
+                    .headers(headers)
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(new ByteArrayResource(data));
+
+        } catch (IOException ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        long contentLength = rangeEnd - rangeStart + 1;
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Range", "bytes " + rangeStart + "-" + rangeEnd + "/" + fileLength);
-        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-        headers.add("Pragma", "no-cache");
-        headers.add("Expires", "0");
-        headers.add("X-Content-Type-Options", "nosniff");
-        headers.setContentLength(contentLength);
-
-        return ResponseEntity
-                .status(HttpStatus.PARTIAL_CONTENT)
-                .headers(headers)
-                .contentType(MediaType.parseMediaType(contentType))
-                .body(new InputStreamResource(inputStream));
     }
 }
