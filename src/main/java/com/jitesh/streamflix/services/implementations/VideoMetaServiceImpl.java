@@ -63,16 +63,16 @@ public class VideoMetaServiceImpl implements VideoMetaService {
 
     @Override
     public VideoMeta getVideoMeta(String videoId) {
-        return null;
+        return vmRepo.findById(videoId).orElseThrow(() -> new RuntimeException("Video not found"));
     }
 
     @Override
     public VideoMeta getVideoMetaByTitle(String videoTitle) {
-        return null;
+        return vmRepo.findByTitle(videoTitle).orElseThrow(() -> new RuntimeException("Video not found"));
     }
 
     @Override
     public List<VideoMeta> getAllVideoMetas() {
-        return null;
+        return vmRepo.findAll();
     }
 }

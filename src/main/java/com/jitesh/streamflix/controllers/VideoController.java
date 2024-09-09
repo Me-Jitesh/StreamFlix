@@ -3,16 +3,20 @@ package com.jitesh.streamflix.controllers;
 import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.services.VideoMetaService;
 import com.jitesh.streamflix.utils.ResponseMessage;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/videos")
-@CrossOrigin( "*")
+@CrossOrigin("*")
 public class VideoController {
 
     private VideoMetaService vmService;
@@ -42,5 +46,27 @@ public class VideoController {
                     .build()
             );
         }
+    }
+
+    @GetMapping("/stream")
+    public List<VideoMeta> getAllVideosMeta() {
+        return vmService.getAllVideoMetas();
+    }
+
+    @GetMapping("/stream/{videoId}")
+    public ResponseEntity<Resource> streamVideo(@PathVariable String videoId) {
+        VideoMeta vm = vmService.getVideoMeta(videoId);
+
+        String contentType = vm.getContentType();
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        String path = vm.getFilePath();
+        Resource video = new FileSystemResource(path);
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(video);
     }
 }
