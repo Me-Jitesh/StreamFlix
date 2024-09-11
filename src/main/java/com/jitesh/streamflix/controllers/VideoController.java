@@ -4,6 +4,8 @@ import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.services.VideoMetaService;
 import com.jitesh.streamflix.utils.AppConstants;
 import com.jitesh.streamflix.utils.ResponseMessage;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -29,6 +31,9 @@ public class VideoController {
 
     private VideoMetaService vmService;
 
+    @Value("${files.hls-directory-path}")
+    private String HLS_DIR;
+
     public VideoController(VideoMetaService vmService) {
         this.vmService = vmService;
     }
@@ -37,8 +42,7 @@ public class VideoController {
     public ResponseEntity<?> uploadVideo(
             @RequestParam("file") MultipartFile vidFile,
             @RequestParam("title") String title,
-            @RequestParam("desc") String desc
-    ) {
+            @RequestParam("desc") String desc) {
         VideoMeta vm = new VideoMeta();
         vm.setVideoId(UUID.randomUUID().toString());
         vm.setTitle(title);
@@ -51,8 +55,7 @@ public class VideoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseMessage.builder()
                     .message("Oops! Video Uploading Failed")
                     .success(false)
-                    .build()
-            );
+                    .build());
         }
     }
 
@@ -80,7 +83,8 @@ public class VideoController {
 
     // Stream Video in Chunks(Byte Range)
     @GetMapping("/stream/range/{vidId}")
-    public ResponseEntity<Resource> StreamVideoInChunks(@PathVariable String vidId, @RequestHeader(value = "Range", required = false) String range) {
+    public ResponseEntity<Resource> StreamVideoInChunks(@PathVariable String vidId,
+            @RequestHeader(value = "Range", required = false) String range) {
 
         VideoMeta vm = vmService.getVideoMeta(vidId);
 
@@ -124,7 +128,6 @@ public class VideoController {
             byte[] data = new byte[(int) contentLength];
             inputStream.read(data, 0, data.length);
 
-
             HttpHeaders headers = new HttpHeaders();
             headers.add("Content-Range", "bytes " + rangeStart + "-" + rangeEnd + "/" + fileLength);
             headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -142,5 +145,46 @@ public class VideoController {
         } catch (IOException ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    // Serve Master File
+    @GetMapping("/{videoId}/master.m3u8")
+    public ResponseEntity<Resource> serverMasterFile(@PathVariable String videoId) {
+
+        Path path = Paths.get(HLS_DIR, videoId, "master.m3u8");
+
+        if (!Files.exists(path)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Resource resource = new FileSystemResource(path);
+
+        return ResponseEntity
+                .ok()
+                .header(
+                        HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl")
+                .body(resource);
+
+    }
+
+    // Serve the Segments
+    @GetMapping("/{vidId}/{segment}.ts")
+    public ResponseEntity<Resource> serveSegments(@PathVariable String vidId,  @PathVariable String segment) {
+
+        // create path for segment
+        Path path = Paths.get(HLS_DIR, vidId, segment + ".ts");
+
+        if (!Files.exists(path)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Resource resource = new FileSystemResource(path);
+
+        return ResponseEntity
+                .ok()
+                .header(
+                        HttpHeaders.CONTENT_TYPE, "video/mp2t")
+                .body(resource);
+
     }
 }

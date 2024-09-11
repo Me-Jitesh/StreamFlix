@@ -13,4 +13,6 @@ public interface VideoMetaService {
     VideoMeta getVideoMetaByTitle(String videoTitle);
 
     List<VideoMeta> getAllVideoMetas();
+
+    void processVideo(String vidId);
 }
