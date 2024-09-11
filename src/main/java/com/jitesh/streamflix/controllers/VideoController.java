@@ -4,7 +4,6 @@ import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.services.VideoMetaService;
 import com.jitesh.streamflix.utils.AppConstants;
 import com.jitesh.streamflix.utils.ResponseMessage;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
@@ -84,7 +83,7 @@ public class VideoController {
     // Stream Video in Chunks(Byte Range)
     @GetMapping("/stream/range/{vidId}")
     public ResponseEntity<Resource> StreamVideoInChunks(@PathVariable String vidId,
-            @RequestHeader(value = "Range", required = false) String range) {
+                                                        @RequestHeader(value = "Range", required = false) String range) {
 
         VideoMeta vm = vmService.getVideoMeta(vidId);
 
@@ -169,7 +168,7 @@ public class VideoController {
 
     // Serve the Segments
     @GetMapping("/{vidId}/{segment}.ts")
-    public ResponseEntity<Resource> serveSegments(@PathVariable String vidId,  @PathVariable String segment) {
+    public ResponseEntity<Resource> serveSegments(@PathVariable String vidId, @PathVariable String segment) {
 
         // create path for segment
         Path path = Paths.get(HLS_DIR, vidId, segment + ".ts");
@@ -186,5 +185,17 @@ public class VideoController {
                         HttpHeaders.CONTENT_TYPE, "video/mp2t")
                 .body(resource);
 
+    }
+
+    @DeleteMapping("/delete/{vidId}")
+    public ResponseEntity<Resource> deleteVideo(@PathVariable String vidId) {
+        vmService.deleteVideoMeta(vidId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/delete/all")
+    public ResponseEntity<Resource> deleteAllVideos() {
+        vmService.getAllVideoMetas();
+        return ResponseEntity.ok().build();
     }
 }

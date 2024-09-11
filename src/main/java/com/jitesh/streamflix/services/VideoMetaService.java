@@ -14,5 +14,7 @@ public interface VideoMetaService {
 
     List<VideoMeta> getAllVideoMetas();
 
+    void deleteVideoMeta(String videoId);
+
     void processVideo(String vidId);
 }
