@@ -18,15 +18,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class VideoMetaServiceImpl implements VideoMetaService {
 
-    @Value("${files.directory-path}")
+    @Value("${files.vid-directory-path}")
     private String VID_DIR;
 
     @Value("${files.hls-directory-path}")
     private String HLS_DIR;
+
+    @Value("${files.thumb-directory-path}")
+    private String THUMB_DIR;
+
 
     @Autowired
     private VideoMetaRepo vmRepo;
@@ -44,26 +49,39 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             file_hls.mkdir();
             System.out.println("HLS Directory Created");
         }
+
+        File file_thumb = new File(THUMB_DIR);
+        if (!file_thumb.exists()) {
+            file_thumb.mkdir();
+            System.out.println("Thumbnails Directory Created");
+        }
     }
 
     @Override
-    public VideoMeta saveVideoMeta(VideoMeta vm, MultipartFile file) {
+    public VideoMeta saveVideoMeta(VideoMeta vm, MultipartFile file, MultipartFile poster) {
         try {
             // Fetching data
             String contentType = file.getContentType();
-            InputStream inputStream = file.getInputStream();
+            InputStream vidStream = file.getInputStream();
+            InputStream thumbStream = poster.getInputStream();
 
-            // Cleaning
+            // Video
             String filename = file.getOriginalFilename();
             String cleanFileName = StringUtils.cleanPath(filename);
             String cleanFolder = StringUtils.cleanPath(VID_DIR);
-            Path path = Paths.get(cleanFolder, cleanFileName);
-            System.out.println(path); // Logging
+            Path vidPath = Paths.get(cleanFolder, cleanFileName);
+            System.out.println(vidPath); // Logging
+
+            // Thumbnail
+            Path thumbPath = Paths.get(StringUtils.cleanPath(Objects.requireNonNull(StringUtils.cleanPath(THUMB_DIR))), StringUtils.cleanPath(poster.getOriginalFilename()));
+            System.out.println(thumbPath); // Logging
 
             // Storing
             vm.setContentType(contentType);
-            vm.setFilePath(path.toString());
-            Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING); // Writing video to directory
+            vm.setFilePath(vidPath.toString());
+            vm.setThumbnailPath(thumbPath.toString());
+            Files.copy(vidStream, vidPath, StandardCopyOption.REPLACE_EXISTING); // Writing video to directory
+            Files.copy(thumbStream, thumbPath, StandardCopyOption.REPLACE_EXISTING);
             VideoMeta res = vmRepo.save(vm);
             // Transcoding Video for multiple resolution & Create HLS Segments
             processVideo(res.getVideoId());

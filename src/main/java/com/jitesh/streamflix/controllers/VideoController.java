@@ -41,12 +41,14 @@ public class VideoController {
     public ResponseEntity<?> uploadVideo(
             @RequestParam("file") MultipartFile vidFile,
             @RequestParam("title") String title,
-            @RequestParam("desc") String desc) {
+            @RequestParam("desc") String desc,
+            @RequestParam("thumb") MultipartFile poster
+    ) {
         VideoMeta vm = new VideoMeta();
         vm.setVideoId(UUID.randomUUID().toString());
         vm.setTitle(title);
         vm.setDescription(desc);
-        VideoMeta video = vmService.saveVideoMeta(vm, vidFile);
+        VideoMeta video = vmService.saveVideoMeta(vm, vidFile, poster);
 
         if (video != null) {
             return ResponseEntity.status(HttpStatus.OK).body(video);
@@ -78,6 +80,16 @@ public class VideoController {
                 .ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(video);
+    }
+
+    @GetMapping("/stream/thumb/{videoId}")
+    public ResponseEntity<Resource> getPoster(@PathVariable String videoId) {
+        VideoMeta vm = vmService.getVideoMeta(videoId);
+        Resource poster = new FileSystemResource(vm.getThumbnailPath());
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(poster);
     }
 
     // Stream Video in Chunks(Byte Range)

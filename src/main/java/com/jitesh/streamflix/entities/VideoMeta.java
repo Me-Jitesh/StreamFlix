@@ -20,5 +20,6 @@ public class VideoMeta {
     private String title;
     private String description;
     private String contentType;
+    private String thumbnailPath;
     private String filePath;
 }
