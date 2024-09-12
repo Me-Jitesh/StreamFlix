@@ -147,9 +147,8 @@ public class VideoController {
     }
 
     // Serve Master File
-    @GetMapping("/{videoId}/master.m3u8")
+    @GetMapping("/stream/{videoId}/master.m3u8")
     public ResponseEntity<Resource> serverMasterFile(@PathVariable String videoId) {
-
         Path path = Paths.get(HLS_DIR, videoId, "master.m3u8");
 
         if (!Files.exists(path)) {
@@ -167,7 +166,7 @@ public class VideoController {
     }
 
     // Serve the Segments
-    @GetMapping("/{vidId}/{segment}.ts")
+    @GetMapping("/stream/{vidId}/{segment}.ts")
     public ResponseEntity<Resource> serveSegments(@PathVariable String vidId, @PathVariable String segment) {
 
         // create path for segment
@@ -187,15 +186,15 @@ public class VideoController {
 
     }
 
-    @DeleteMapping("/delete/{vidId}")
+    @GetMapping("/stream/delete/{vidId}")
     public ResponseEntity<Resource> deleteVideo(@PathVariable String vidId) {
         vmService.deleteVideoMeta(vidId);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/delete/all")
+    @GetMapping("/stream/delete/all")
     public ResponseEntity<Resource> deleteAllVideos() {
-        vmService.getAllVideoMetas();
+        vmService.deleteAllVideoMetas();
         return ResponseEntity.ok().build();
     }
 }

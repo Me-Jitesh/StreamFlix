@@ -93,12 +93,13 @@ public class VideoMetaServiceImpl implements VideoMetaService {
 
     @Override
     public void deleteVideoMeta(String videoId) {
-         vmRepo.delete(getVideoMeta(videoId));
+        vmRepo.delete(getVideoMeta(videoId));
     }
 
-    public  void  deleteAllVideoMetas(){
+    public void deleteAllVideoMetas() {
         vmRepo.deleteAll();
     }
+
     @Override
     public void processVideo(String vidId) {
 
