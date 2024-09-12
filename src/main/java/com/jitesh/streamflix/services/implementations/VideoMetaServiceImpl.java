@@ -17,10 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class VideoMetaServiceImpl implements VideoMetaService {
@@ -70,9 +67,7 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             VideoMeta res = vmRepo.save(vm);
             // Transcoding Video for multiple resolution & Create HLS Segments
             processVideo(res.getVideoId());
-            // TODO: Delete actual video file and database entry if exception
             return res;
-
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -124,8 +119,8 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             Path outputPath = Paths.get(HLS_DIR, vidId);
             Path directory = Files.createDirectories(outputPath);
             // Set Permission to  dir
-            Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxr-xr-x");
-            Files.setPosixFilePermissions(directory, permissions);
+//            Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxr-xr-x");
+//            Files.setPosixFilePermissions(directory, permissions);
             System.out.println("OUTPUT PATH  " + outputPath);
 
             // Prepare ffmpeg Command
@@ -168,6 +163,7 @@ public class VideoMetaServiceImpl implements VideoMetaService {
                 processBuilder = new ProcessBuilder("bash", "-c", ffmpegCmd);
             } else {
                 System.err.println("UNSUPPORTED OS  " + os);
+                cleanupFiles(vidId);
                 throw new UnsupportedOperationException("Unsupported Operating System:  " + os);
             }
 
@@ -178,15 +174,32 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             int exit = process.waitFor();
             if (exit != 0) {
                 System.err.println("PROCESS EXIT " + exit);
+                cleanupFiles(vidId);
                 throw new RuntimeException("Video Processing Failed !");
             }
 
         } catch (IOException ex) {
+            cleanupFiles(vidId);
             ex.printStackTrace();
             throw new RuntimeException("Video Processing Failed ! IO EXCEPTION!");
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
+            cleanupFiles(vidId);
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    void cleanupFiles(String vidId) {
+        // Delete Vid File
+        File file = new File(getVideoMeta(vidId).getFilePath());
+        if (file.exists() && file.delete()) {
+            System.out.println("File Deleted");
+        } else {
+            System.err.println("File Deletion Failed");
+        }
+        // Delete DB Entry
+        deleteVideoMeta(vidId);
+        // Delete HLS_DIR
+        new File(String.valueOf(Paths.get(HLS_DIR, vidId))).delete();
     }
 }
