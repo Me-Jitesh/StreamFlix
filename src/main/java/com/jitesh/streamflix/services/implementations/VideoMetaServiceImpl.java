@@ -68,9 +68,9 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             vm.setFilePath(path.toString());
             Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING); // Writing video to directory
             VideoMeta res = vmRepo.save(vm);
-            // Transcoding  Video for multiple resolution &  Create HLS Segments
+            // Transcoding Video for multiple resolution & Create HLS Segments
             processVideo(res.getVideoId());
-            //TODO:  Delete actual video file and database entry if exception
+            // TODO: Delete actual video file and database entry if exception
             return res;
 
         } catch (Exception e) {
@@ -108,10 +108,10 @@ public class VideoMetaServiceImpl implements VideoMetaService {
 
         VideoMeta video = getVideoMeta(vidId);
         String filePath = video.getFilePath();
-
-        // path where to store data:
+        // path to store data:
         Path videoPath = Paths.get(filePath);
 
+        // To Create Multiple Quality Videos(Resource Heavy)
 //         String output360p = HLS_DIR + vidId + "/360p/";
 //         String output720p = HLS_DIR + vidId + "/720p/";
 //         String output1080p = HLS_DIR + vidId + "/1080p/";
@@ -122,63 +122,70 @@ public class VideoMetaServiceImpl implements VideoMetaService {
 //             Files.createDirectories(Paths.get(output1080p));
 
             Path outputPath = Paths.get(HLS_DIR, vidId);
-            Files.createDirectories(outputPath);
             Path directory = Files.createDirectories(outputPath);
             // Set Permission to  dir
             Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxr-xr-x");
             Files.setPosixFilePermissions(directory, permissions);
-
+            System.out.println("OUTPUT PATH  " + outputPath);
 
             // Prepare ffmpeg Command
             String ffmpegCmd = String.format(
                     "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%3d.ts\"  \"%s/master.m3u8\" ",
                     videoPath, outputPath, outputPath);
 
-//             StringBuilder ffmpegCmd = new StringBuilder();
-//             ffmpegCmd.append("ffmpeg -i ")
-//             .append(videoPath.toString())
-//             .append(" -c:v libx264 -c:a aac")
-//             .append(" ")
-//             .append("-map 0:v -map 0:a -s:v:0 640x360 -b:v:0 800k ")
-//             .append("-map 0:v -map 0:a -s:v:1 1280x720 -b:v:1 2800k ")
-//             .append("-map 0:v -map 0:a -s:v:2 1920x1080 -b:v:2 5000k ")
-//             .append("-var_stream_map \"v:0,a:0 v:1,a:0 v:2,a:0\" ")
-//             .append("-master_pl_name")
-//             .append(HLS_DIR).append(vidId).append("/master.m3u8 ")
-//             .append("-f hls -hls_time 10 -hls_list_size 0 ")
-//             .append("-hls_segment_filename\"")
-//             .append(HLS_DIR).append(vidId)
-//             .append("/v%v/fileSequence%d.ts\" ")
-//             .append("\"").append(HLS_DIR).append(vidId).append("/v%v/prog_index.m3u8\"");
+            System.out.println("FFMPEG Command Created  " + ffmpegCmd);
+
+            // StringBuilder ffmpegCmd = new StringBuilder();
+            // ffmpegCmd.append("ffmpeg -i ")
+            // .append(videoPath.toString())
+            // .append(" -c:v libx264 -c:a aac")
+            // .append(" ")
+            // .append("-map 0:v -map 0:a -s:v:0 640x360 -b:v:0 800k ")
+            // .append("-map 0:v -map 0:a -s:v:1 1280x720 -b:v:1 2800k ")
+            // .append("-map 0:v -map 0:a -s:v:2 1920x1080 -b:v:2 5000k ")
+            // .append("-var_stream_map \"v:0,a:0 v:1,a:0 v:2,a:0\" ")
+            // .append("-master_pl_name")
+            // .append(HLS_DIR).append(vidId).append("/master.m3u8 ")
+            // .append("-f hls -hls_time 10 -hls_list_size 0 ")
+            // .append("-hls_segment_filename\"")
+            // .append(HLS_DIR).append(vidId)
+            // .append("/v%v/fileSequence%d.ts\" ")
+            // .append("\"").append(HLS_DIR).append(vidId).append("/v%v/prog_index.m3u8\"");
 
             // Detect the operating system
             String os = System.getProperty("os.name").toLowerCase();
-
-            ProcessBuilder processBuilder;
+            System.out.println("GET OS  " + os);
 
             // Command based on the OS
+            ProcessBuilder processBuilder;
+
             if (os.contains("win")) {
-                // Command for Windows
-                processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);
+                processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);                 // Command for Windows
             } else if (os.contains("nix") || os.contains("nux") || os.contains("mac")) {
                 // Command for Linux/Mac
 //                processBuilder = new ProcessBuilder("ffmpeg", "-version");
 //                processBuilder.redirectErrorStream(true); // Redirect stderr to stdout
                 processBuilder = new ProcessBuilder("bash", "-c", ffmpegCmd);
             } else {
+                System.err.println("UNSUPPORTED OS  " + os);
                 throw new UnsupportedOperationException("Unsupported Operating System:  " + os);
             }
 
             processBuilder.inheritIO();
+            // Fire the Command
             Process process = processBuilder.start();
+            System.out.println("FFMPEG Command Executed  Successfully");
             int exit = process.waitFor();
             if (exit != 0) {
+                System.err.println("PROCESS EXIT " + exit);
                 throw new RuntimeException("Video Processing Failed !");
             }
 
         } catch (IOException ex) {
-            throw new RuntimeException("Video Processing Fail !");
+            ex.printStackTrace();
+            throw new RuntimeException("Video Processing Failed ! IO EXCEPTION!");
         } catch (InterruptedException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
