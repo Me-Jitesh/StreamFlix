@@ -17,7 +17,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class VideoMetaServiceImpl implements VideoMetaService {
@@ -109,20 +112,24 @@ public class VideoMetaServiceImpl implements VideoMetaService {
         // path where to store data:
         Path videoPath = Paths.get(filePath);
 
-//         String output360p = HSL_DIR + vidId + "/360p/";
-//         String output720p = HSL_DIR + vidId + "/720p/";
-//         String output1080p = HSL_DIR + vidId + "/1080p/";
+//         String output360p = HLS_DIR + vidId + "/360p/";
+//         String output720p = HLS_DIR + vidId + "/720p/";
+//         String output1080p = HLS_DIR + vidId + "/1080p/";
 
         try {
 //             Files.createDirectories(Paths.get(output360p));
 //             Files.createDirectories(Paths.get(output720p));
 //             Files.createDirectories(Paths.get(output1080p));
 
-            // ffmpeg command
             Path outputPath = Paths.get(HLS_DIR, vidId);
-
             Files.createDirectories(outputPath);
+            Path directory = Files.createDirectories(outputPath);
+            // Set Permission to  dir
+            Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxr-xr-x");
+            Files.setPosixFilePermissions(directory, permissions);
 
+
+            // Prepare ffmpeg Command
             String ffmpegCmd = String.format(
                     "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%3d.ts\"  \"%s/master.m3u8\" ",
                     videoPath, outputPath, outputPath);
@@ -144,9 +151,23 @@ public class VideoMetaServiceImpl implements VideoMetaService {
 //             .append("/v%v/fileSequence%d.ts\" ")
 //             .append("\"").append(HLS_DIR).append(vidId).append("/v%v/prog_index.m3u8\"");
 
-            // fire this command
-            ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCmd); // Windows
-//            ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", "-c", ffmpegCmd); // Linux
+            // Detect the operating system
+            String os = System.getProperty("os.name").toLowerCase();
+
+            ProcessBuilder processBuilder;
+
+            // Command based on the OS
+            if (os.contains("win")) {
+                // Command for Windows
+                processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);
+            } else if (os.contains("nix") || os.contains("nux") || os.contains("mac")) {
+                // Command for Linux/Mac
+//                processBuilder = new ProcessBuilder("ffmpeg", "-version");
+//                processBuilder.redirectErrorStream(true); // Redirect stderr to stdout
+                processBuilder = new ProcessBuilder("bash", "-c", ffmpegCmd);
+            } else {
+                throw new UnsupportedOperationException("Unsupported Operating System:  " + os);
+            }
 
             processBuilder.inheritIO();
             Process process = processBuilder.start();
@@ -160,6 +181,5 @@ public class VideoMetaServiceImpl implements VideoMetaService {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
     }
 }
