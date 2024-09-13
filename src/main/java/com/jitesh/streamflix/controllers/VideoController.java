@@ -1,9 +1,14 @@
 package com.jitesh.streamflix.controllers;
 
 import com.jitesh.streamflix.entities.VideoMeta;
+import com.jitesh.streamflix.entities.Visitor;
 import com.jitesh.streamflix.services.VideoMetaService;
+import com.jitesh.streamflix.services.VisitorService;
 import com.jitesh.streamflix.utils.AppConstants;
+import com.jitesh.streamflix.utils.IPLocation;
 import com.jitesh.streamflix.utils.ResponseMessage;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
@@ -29,12 +34,14 @@ import java.util.UUID;
 public class VideoController {
 
     private VideoMetaService vmService;
+    private VisitorService visitorService;
 
     @Value("${files.hls-directory-path}")
     private String HLS_DIR;
 
-    public VideoController(VideoMetaService vmService) {
+    public VideoController(VideoMetaService vmService, VisitorService visitorService) {
         this.vmService = vmService;
+        this.visitorService = visitorService;
     }
 
     @PostMapping
@@ -61,7 +68,13 @@ public class VideoController {
     }
 
     @GetMapping("/stream")
-    public List<VideoMeta> getAllVideosMeta() {
+    public List<VideoMeta> getAllVideosMeta(HttpServletRequest req, HttpServletResponse res) {
+        Visitor visitor = IPLocation.extractIP(req);
+        boolean uniqueVisitor = IPLocation.isUniqueVisitor(req);
+        if (uniqueVisitor) {
+            visitorService.saveVisitor(visitor);
+            IPLocation.setCookie(res, visitor.getIp());
+        }
         return vmService.getAllVideoMetas();
     }
 

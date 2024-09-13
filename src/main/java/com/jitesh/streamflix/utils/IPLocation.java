@@ -1,6 +1,9 @@
 package com.jitesh.streamflix.utils;
 
 import com.jitesh.streamflix.entities.Visitor;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -12,13 +15,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Scanner;
 
-public class IPLocation {
-    private static final String API_URL = "https://ipwhois.app/json/";
-
-    public static void main(String[] args) {
-        Visitor visitor = getGeoLocation("152.59.28.191");
-        System.out.println(visitor);
-    }
+public interface IPLocation {
+    static final String API_URL = "https://ipwhois.app/json/";
 
     public static Visitor getGeoLocation(String ipAddress) {
         try {
@@ -53,5 +51,35 @@ public class IPLocation {
             ex.printStackTrace();
             throw new RuntimeException(ex);
         }
+    }
+
+    public static Visitor extractIP(HttpServletRequest request) {
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isEmpty()) {
+            // Fallback to getRemoteAddr if X-Forwarded-For is not present
+            clientIp = request.getRemoteAddr();
+        } else {
+            // If there are multiple IPs in X-Forwarded-For, take the first one
+            clientIp = clientIp.split(",")[0];
+        }
+        return getGeoLocation(clientIp);
+    }
+
+    public static boolean isUniqueVisitor(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("isVisited")) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static void setCookie(HttpServletResponse response, String ip) {
+        Cookie cookie = new Cookie("isVisited", ip);
+        cookie.setMaxAge(60 * 60 * 24 * 30);
+        response.addCookie(cookie); // Add the cookie to the response
     }
 }
