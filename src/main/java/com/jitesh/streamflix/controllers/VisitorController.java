@@ -4,7 +4,6 @@ import com.jitesh.streamflix.entities.Visitor;
 import com.jitesh.streamflix.services.VisitorService;
 import com.jitesh.streamflix.utils.IPLocation;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,25 +19,17 @@ public class VisitorController {
     private VisitorService visitorService;
 
     @GetMapping("/save")
-    public ResponseEntity<?> setVisitorLocation(HttpServletRequest req, HttpServletResponse res) {
+    public ResponseEntity<?> setVisitorLocation(HttpServletRequest req) {
         Visitor visitor = IPLocation.extractIP(req);
-        saveToDB(req, res, visitor);
+        IPLocation.saveVisitor(req, visitorService, visitor);
         return ResponseEntity.ok(visitor.getIp());
     }
 
     @GetMapping("/save/{ip}")
-    public ResponseEntity<?> setVisitorLocation(@PathVariable String ip, HttpServletRequest req, HttpServletResponse res) {
+    public ResponseEntity<?> setVisitorLocation(@PathVariable String ip, HttpServletRequest req) {
         Visitor visitor = IPLocation.getGeoLocation(ip);
-        saveToDB(req, res, visitor);
+        IPLocation.saveVisitor(req, visitorService, visitor);
         return ResponseEntity.ok(visitor.getIp());
-    }
-
-    private void saveToDB(HttpServletRequest req, HttpServletResponse res, Visitor visitor) {
-        boolean uniqueVisitor = IPLocation.isUniqueVisitor(req);
-        if (uniqueVisitor) {
-            visitorService.saveVisitor(visitor);
-            IPLocation.setCookie(res, visitor.getIp());
-        }
     }
 
     @GetMapping("/get/{id}")

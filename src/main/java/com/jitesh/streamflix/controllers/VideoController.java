@@ -8,7 +8,6 @@ import com.jitesh.streamflix.utils.AppConstants;
 import com.jitesh.streamflix.utils.IPLocation;
 import com.jitesh.streamflix.utils.ResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
@@ -49,8 +48,7 @@ public class VideoController {
             @RequestParam("file") MultipartFile vidFile,
             @RequestParam("title") String title,
             @RequestParam("desc") String desc,
-            @RequestParam("thumb") MultipartFile poster
-    ) {
+            @RequestParam("thumb") MultipartFile poster) {
         VideoMeta vm = new VideoMeta();
         vm.setVideoId(UUID.randomUUID().toString());
         vm.setTitle(title);
@@ -68,13 +66,9 @@ public class VideoController {
     }
 
     @GetMapping("/stream")
-    public List<VideoMeta> getAllVideosMeta(HttpServletRequest req, HttpServletResponse res) {
+    public List<VideoMeta> getAllVideosMeta(HttpServletRequest req) {
         Visitor visitor = IPLocation.extractIP(req);
-        boolean uniqueVisitor = IPLocation.isUniqueVisitor(req);
-        if (uniqueVisitor) {
-            visitorService.saveVisitor(visitor);
-            IPLocation.setCookie(res, visitor.getIp());
-        }
+        IPLocation.saveVisitor(req, visitorService, visitor);
         return vmService.getAllVideoMetas();
     }
 
@@ -108,7 +102,7 @@ public class VideoController {
     // Stream Video in Chunks(Byte Range)
     @GetMapping("/stream/range/{vidId}")
     public ResponseEntity<Resource> StreamVideoInChunks(@PathVariable String vidId,
-                                                        @RequestHeader(value = "Range", required = false) String range) {
+            @RequestHeader(value = "Range", required = false) String range) {
 
         VideoMeta vm = vmService.getVideoMeta(vidId);
 

@@ -1,6 +1,8 @@
 package com.jitesh.streamflix.utils;
 
 import com.jitesh.streamflix.entities.Visitor;
+import com.jitesh.streamflix.services.VisitorService;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +26,7 @@ public interface IPLocation {
             URL url = new URL(apiUrlWithIP);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setConnectTimeout(5000);  // Timeout for production use
+            connection.setConnectTimeout(5000); // Timeout for production use
             connection.setReadTimeout(5000);
 
             InputStream inputStream = connection.getInputStream();
@@ -32,7 +34,7 @@ public interface IPLocation {
             String response = scanner.useDelimiter("\\A").next();
             JSONObject json = new JSONObject(response);
 
-            // Map the JSON Response to the  Model Class
+            // Map the JSON Response to the Model Class
             return new Visitor(null,
                     json.getString("ip"),
                     json.getString("country"),
@@ -45,8 +47,7 @@ public interface IPLocation {
                     json.getString("isp"),
                     json.getString("country_flag"),
                     json.getString("timezone"),
-                    Timestamp.from(Instant.now())
-            );
+                    Timestamp.from(Instant.now()));
         } catch (IOException ex) {
             ex.printStackTrace();
             throw new RuntimeException(ex);
@@ -81,5 +82,13 @@ public interface IPLocation {
         Cookie cookie = new Cookie("isVisited", ip);
         cookie.setMaxAge(60 * 60 * 24 * 30);
         response.addCookie(cookie); // Add the cookie to the response
+    }
+
+    public static void saveVisitor(HttpServletRequest req, VisitorService visitorService, Visitor visitor) {
+        // Visiting First Time
+        if (req.getSession().getAttribute("visitorIP") == null) {
+            visitorService.saveVisitor(visitor);
+            req.getSession().setAttribute("visitorIP", visitor.getIp());
+        }
     }
 }
