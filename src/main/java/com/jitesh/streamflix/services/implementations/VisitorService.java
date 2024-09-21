@@ -1,4 +1,4 @@
-package com.jitesh.streamflix.services;
+package com.jitesh.streamflix.services.implementations;
 
 import com.jitesh.streamflix.entities.Visitor;
 

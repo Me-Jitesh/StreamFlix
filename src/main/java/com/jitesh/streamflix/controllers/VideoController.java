@@ -2,8 +2,8 @@ package com.jitesh.streamflix.controllers;
 
 import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.entities.Visitor;
-import com.jitesh.streamflix.services.VideoMetaService;
-import com.jitesh.streamflix.services.VisitorService;
+import com.jitesh.streamflix.services.implementations.VideoMetaService;
+import com.jitesh.streamflix.services.implementations.VisitorService;
 import com.jitesh.streamflix.utils.AppConstants;
 import com.jitesh.streamflix.utils.IPLocation;
 import com.jitesh.streamflix.utils.ResponseMessage;

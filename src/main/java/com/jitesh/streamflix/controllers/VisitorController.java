@@ -1,7 +1,7 @@
 package com.jitesh.streamflix.controllers;
 
 import com.jitesh.streamflix.entities.Visitor;
-import com.jitesh.streamflix.services.VisitorService;
+import com.jitesh.streamflix.services.implementations.VisitorService;
 import com.jitesh.streamflix.utils.IPLocation;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,7 @@ package com.jitesh.streamflix.services.implementations;
 
 import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.repositories.VideoMetaRepo;
-import com.jitesh.streamflix.services.VideoMetaService;
+
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

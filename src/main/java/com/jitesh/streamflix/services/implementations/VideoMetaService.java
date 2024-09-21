@@ -1,4 +1,4 @@
-package com.jitesh.streamflix.services;
+package com.jitesh.streamflix.services.implementations;
 
 import com.jitesh.streamflix.entities.VideoMeta;
 import org.springframework.web.multipart.MultipartFile;
