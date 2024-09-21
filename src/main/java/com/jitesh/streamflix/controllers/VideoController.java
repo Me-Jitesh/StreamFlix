@@ -67,8 +67,8 @@ public class VideoController {
 
     @GetMapping("/stream")
     public List<VideoMeta> getAllVideosMeta(HttpServletRequest req) {
-        Visitor visitor = IPLocation.extractIP(req);
-        IPLocation.saveVisitor(req, visitorService, visitor);
+        // Visitor visitor = IPLocation.extractIP(req);
+        // IPLocation.saveVisitor(req, visitorService, visitor);
         return vmService.getAllVideoMetas();
     }
 

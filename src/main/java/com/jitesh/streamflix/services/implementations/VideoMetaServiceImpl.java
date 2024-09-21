@@ -32,7 +32,6 @@ public class VideoMetaServiceImpl implements VideoMetaService {
     @Value("${files.thumb-directory-path}")
     private String THUMB_DIR;
 
-
     @Autowired
     private VideoMetaRepo vmRepo;
 
@@ -73,7 +72,8 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             System.out.println(vidPath); // Logging
 
             // Thumbnail
-            Path thumbPath = Paths.get(StringUtils.cleanPath(Objects.requireNonNull(StringUtils.cleanPath(THUMB_DIR))), StringUtils.cleanPath(poster.getOriginalFilename()));
+            Path thumbPath = Paths.get(StringUtils.cleanPath(Objects.requireNonNull(StringUtils.cleanPath(THUMB_DIR))),
+                    StringUtils.cleanPath(poster.getOriginalFilename()));
             System.out.println(thumbPath); // Logging
 
             // Storing
@@ -84,7 +84,7 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             Files.copy(thumbStream, thumbPath, StandardCopyOption.REPLACE_EXISTING);
             VideoMeta res = vmRepo.save(vm);
             // Transcoding Video for multiple resolution & Create HLS Segments
-            processVideo(res.getVideoId());
+            // processVideo(res.getVideoId());
             return res;
         } catch (Exception e) {
             e.printStackTrace();
@@ -125,20 +125,21 @@ public class VideoMetaServiceImpl implements VideoMetaService {
         Path videoPath = Paths.get(filePath);
 
         // To Create Multiple Quality Videos(Resource Heavy)
-//         String output360p = HLS_DIR + vidId + "/360p/";
-//         String output720p = HLS_DIR + vidId + "/720p/";
-//         String output1080p = HLS_DIR + vidId + "/1080p/";
+        // String output360p = HLS_DIR + vidId + "/360p/";
+        // String output720p = HLS_DIR + vidId + "/720p/";
+        // String output1080p = HLS_DIR + vidId + "/1080p/";
 
         try {
-//             Files.createDirectories(Paths.get(output360p));
-//             Files.createDirectories(Paths.get(output720p));
-//             Files.createDirectories(Paths.get(output1080p));
+            // Files.createDirectories(Paths.get(output360p));
+            // Files.createDirectories(Paths.get(output720p));
+            // Files.createDirectories(Paths.get(output1080p));
 
             Path outputPath = Paths.get(HLS_DIR, vidId);
             Path directory = Files.createDirectories(outputPath);
-            // Set Permission to  dir
-//            Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxr-xr-x");
-//            Files.setPosixFilePermissions(directory, permissions);
+            // Set Permission to dir
+            // Set<PosixFilePermission> permissions =
+            // PosixFilePermissions.fromString("rwxr-xr-x");
+            // Files.setPosixFilePermissions(directory, permissions);
             System.out.println("OUTPUT PATH  " + outputPath);
 
             // Prepare ffmpeg Command
@@ -173,11 +174,11 @@ public class VideoMetaServiceImpl implements VideoMetaService {
             ProcessBuilder processBuilder;
 
             if (os.contains("win")) {
-                processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);                 // Command for Windows
+                processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCmd); // Command for Windows
             } else if (os.contains("nix") || os.contains("nux") || os.contains("mac")) {
                 // Command for Linux/Mac
-//                processBuilder = new ProcessBuilder("ffmpeg", "-version");
-//                processBuilder.redirectErrorStream(true); // Redirect stderr to stdout
+                // processBuilder = new ProcessBuilder("ffmpeg", "-version");
+                // processBuilder.redirectErrorStream(true); // Redirect stderr to stdout
                 processBuilder = new ProcessBuilder("bash", "-c", ffmpegCmd);
             } else {
                 System.err.println("UNSUPPORTED OS  " + os);
