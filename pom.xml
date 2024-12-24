@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.jitesh</groupId>
     <artifactId>StreamFlix</artifactId>
-    <version>production-release-1.0</version>
+    <version>production-release-1.1</version>
     <name>StreamFlix</name>
     <description>StreamFlix</description>
     <url/>
