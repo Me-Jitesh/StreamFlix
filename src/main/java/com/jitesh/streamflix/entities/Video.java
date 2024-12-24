@@ -21,11 +21,11 @@ public class Video {
     private String name;
 
     @Lob
-    @Column(columnDefinition = "LONGBLOB")
+    @Column(length=100000*10000)
     private byte[] vid;
 
     @Lob
-    @Column(columnDefinition = "LONGBLOB")
+    @Column(length=100000*10000)
     private byte[] thumb;
 
 }
