@@ -1,7 +1,7 @@
 package com.jitesh.streamflix.utils;
 
 import com.jitesh.streamflix.entities.Visitor;
-import com.jitesh.streamflix.services.implementations.VisitorService;
+import com.jitesh.streamflix.services.VisitorService;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

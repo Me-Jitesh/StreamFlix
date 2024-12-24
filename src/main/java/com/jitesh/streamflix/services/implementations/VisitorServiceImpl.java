@@ -3,6 +3,7 @@ package com.jitesh.streamflix.services.implementations;
 import com.jitesh.streamflix.entities.Visitor;
 import com.jitesh.streamflix.repositories.VisitorRepo;
 
+import com.jitesh.streamflix.services.VisitorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

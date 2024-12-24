@@ -1,11 +1,10 @@
 package com.jitesh.streamflix.controllers;
 
+import com.jitesh.streamflix.entities.Video;
 import com.jitesh.streamflix.entities.VideoMeta;
-import com.jitesh.streamflix.entities.Visitor;
-import com.jitesh.streamflix.services.implementations.VideoMetaService;
-import com.jitesh.streamflix.services.implementations.VisitorService;
+import com.jitesh.streamflix.services.VideoMetaService;
+import com.jitesh.streamflix.services.VisitorService;
 import com.jitesh.streamflix.utils.AppConstants;
-import com.jitesh.streamflix.utils.IPLocation;
 import com.jitesh.streamflix.utils.ResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +48,7 @@ public class VideoController {
             @RequestParam("title") String title,
             @RequestParam("desc") String desc,
             @RequestParam("thumb") MultipartFile poster) {
+
         VideoMeta vm = new VideoMeta();
         vm.setVideoId(UUID.randomUUID().toString());
         vm.setTitle(title);
@@ -74,6 +74,22 @@ public class VideoController {
 
     @GetMapping("/stream/{videoId}")
     public ResponseEntity<Resource> streamVideo(@PathVariable String videoId) {
+        return getVidFromDB(videoId);
+//        return getFromFileSystem(videoId);
+    }
+
+    private ResponseEntity<Resource> getVidFromDB(String videoId) {
+        Video vid = vmService.getVideo(videoId);
+
+        ByteArrayResource resource = new ByteArrayResource(vid.getVid());
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "video/mp4")
+                .body(resource);
+    }
+
+    private ResponseEntity<Resource> getFromFileSystem(String videoId) {
         VideoMeta vm = vmService.getVideoMeta(videoId);
 
         String contentType = vm.getContentType();
@@ -91,6 +107,20 @@ public class VideoController {
 
     @GetMapping("/stream/thumb/{videoId}")
     public ResponseEntity<Resource> getPoster(@PathVariable String videoId) {
+        return getThumbFromDB(videoId);
+//        return getThumbFromFileSystem(videoId);
+    }
+
+    private ResponseEntity<Resource> getThumbFromDB(String videoId) {
+        Video v = vmService.getThumb(videoId);
+        Resource poster = new ByteArrayResource(v.getThumb());
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(poster);
+    }
+
+    private ResponseEntity<Resource> getThumbFromFileSystem(String videoId) {
         VideoMeta vm = vmService.getVideoMeta(videoId);
         Resource poster = new FileSystemResource(vm.getThumbnailPath());
         return ResponseEntity
@@ -102,7 +132,7 @@ public class VideoController {
     // Stream Video in Chunks(Byte Range)
     @GetMapping("/stream/range/{vidId}")
     public ResponseEntity<Resource> StreamVideoInChunks(@PathVariable String vidId,
-            @RequestHeader(value = "Range", required = false) String range) {
+                                                        @RequestHeader(value = "Range", required = false) String range) {
 
         VideoMeta vm = vmService.getVideoMeta(vidId);
 

@@ -1,9 +1,12 @@
 package com.jitesh.streamflix.services.implementations;
 
+import com.jitesh.streamflix.entities.Video;
 import com.jitesh.streamflix.entities.VideoMeta;
 import com.jitesh.streamflix.repositories.VideoMetaRepo;
-
+import com.jitesh.streamflix.repositories.VideoRepo;
+import com.jitesh.streamflix.services.VideoMetaService;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
+@Slf4j
 public class VideoMetaServiceImpl implements VideoMetaService {
 
     @Value("${files.vid-directory-path}")
@@ -34,6 +38,8 @@ public class VideoMetaServiceImpl implements VideoMetaService {
 
     @Autowired
     private VideoMetaRepo vmRepo;
+    @Autowired
+    private VideoRepo videoRepo;
 
     @PostConstruct
     public void init() {
@@ -76,13 +82,18 @@ public class VideoMetaServiceImpl implements VideoMetaService {
                     StringUtils.cleanPath(poster.getOriginalFilename()));
             System.out.println(thumbPath); // Logging
 
-            // Storing
+            // Storing VideoMeta  into DB
             vm.setContentType(contentType);
             vm.setFilePath(vidPath.toString());
             vm.setThumbnailPath(thumbPath.toString());
-            Files.copy(vidStream, vidPath, StandardCopyOption.REPLACE_EXISTING); // Writing video to directory
-            Files.copy(thumbStream, thumbPath, StandardCopyOption.REPLACE_EXISTING);
             VideoMeta res = vmRepo.save(vm);
+
+            // Store Video into File System
+            saveVideoIntoFileSystem(vidPath, thumbPath, vidStream, thumbStream);
+
+            // Store Video & Thumbnail  Data in DB
+            saveVideoIntoDB(vm, file, poster);
+
             // Transcoding Video for multiple resolution & Create HLS Segments
             // processVideo(res.getVideoId());
             return res;
@@ -92,9 +103,34 @@ public class VideoMetaServiceImpl implements VideoMetaService {
         }
     }
 
+    private void saveVideoIntoFileSystem(Path vidPath, Path thumbPath, InputStream vidStream, InputStream thumbStream) throws IOException {
+        Files.copy(vidStream, vidPath, StandardCopyOption.REPLACE_EXISTING); // Writing video to directory
+        Files.copy(thumbStream, thumbPath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private void saveVideoIntoDB(VideoMeta vm, MultipartFile file, MultipartFile poster) throws IOException {
+        Video vid = Video.builder()
+                .id(vm.getVideoId())
+                .name(vm.getTitle())
+                .vid(file.getBytes())
+                .thumb(poster.getBytes())
+                .build();
+        videoRepo.save(vid);
+    }
+
     @Override
     public VideoMeta getVideoMeta(String videoId) {
         return vmRepo.findById(videoId).orElseThrow(() -> new RuntimeException("Video not found"));
+    }
+
+    @Override
+    public Video getVideo(String videoId) {
+        return videoRepo.findById(videoId).orElseThrow(() -> new RuntimeException("Video not found"));
+    }
+
+    @Override
+    public Video getThumb(String videoId) {
+        return videoRepo.findById(videoId).orElseThrow(() -> new RuntimeException("Thumb Not Found"));
     }
 
     @Override
