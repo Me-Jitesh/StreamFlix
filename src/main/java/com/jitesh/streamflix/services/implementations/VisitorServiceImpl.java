@@ -2,15 +2,16 @@ package com.jitesh.streamflix.services.implementations;
 
 import com.jitesh.streamflix.entities.Visitor;
 import com.jitesh.streamflix.repositories.VisitorRepo;
-
 import com.jitesh.streamflix.services.VisitorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class VisitorServiceImpl implements VisitorService {
+
     @Autowired
     private VisitorRepo repo;
 
@@ -26,7 +27,7 @@ public class VisitorServiceImpl implements VisitorService {
 
     @Override
     public List<Visitor> getAllVisitor() {
-        return repo.findAll();
+        return repo.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 
     @Override
